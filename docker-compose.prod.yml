@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3"
 
 services:
   mysqldb:
@@ -7,7 +7,7 @@ services:
     env_file:
       - "./backend/db/.env"
     ports:
-      - "3307:3307"
+      - 3307:3307
     volumes:
       - mysql-data:/var/lib/mysql
     # networks:
@@ -17,9 +17,9 @@ services:
     build:
       context: ./backend/django_backend
       dockerfile: Dockerfile
-    container_name: backend
+    container_name: Alddeul-Backend
     ports:
-      - "8000:8000"
+      - 8000:8000
     volumes:
       - ./backend:/app
       - ./backend/django_backend/static:/app/static
@@ -41,10 +41,10 @@ services:
       dockerfile: Dockerfile
       args:
         API_URL: "*"
-    container_name: frontend
+    container_name: Alddeul-Frontend
     command: yarn dev
     ports:
-      - "3001:3001"
+      - 3001:3001
     volumes:
       - ./frontend:/frontend
       - /frontend/node_modules
@@ -54,7 +54,7 @@ services:
     image: nginx:latest
     container_name: nginx
     ports:
-      - "80:80"
+      - 80:80
       - 443:443
     volumes:
       - ./backend/nginx/nginx.conf:/etc/nginx/nginx.conf
@@ -65,7 +65,6 @@ services:
     depends_on:
       - frontend
       - backend
-
     # networks:
     #   - app-network
 
@@ -75,7 +74,7 @@ services:
     environment:
       - TZ=Asia/Seoul
     ports:
-      - "6379:6379"
+      - 6379:6379
     volumes:
       - ./backend/redis/data:/data
       - ./backend/redis/conf/redis.conf:/usr/local/conf/redis.conf
@@ -98,8 +97,8 @@ services:
       - ./backend/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
-  #   networks:
-  #     - app-network
+    # networks:
+    #   - app-network
 
   grafana:
     image: grafana/grafana:9.5.20
@@ -109,8 +108,8 @@ services:
       - ./backend/grafana/data:/var/lib/grafana
     ports:
       - "3000:3000"
-  #   networks:
-  #     - app-network
+    # networks:
+    #   - app-network
 
   certbot: #certbot 컨테이너 추가
     image: certbot/certbot

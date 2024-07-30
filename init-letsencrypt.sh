@@ -7,10 +7,10 @@ fi
 
 compose_file="docker-compose.prod.yml"
 
-domains=(sohpyy.shop)
+domains=(alddeul.store)
 rsa_key_size=4096
 data_path="./certbot"
-email="본인 이메일" # Adding a valid address is strongly recommended
+email="yujin12941@gmail.com" # Adding a valid address is strongly recommended
 staging=0 # Set to 1 if you're testing your setup to avoid hitting request limits
 
 if [ -d "$data_path" ]; then
