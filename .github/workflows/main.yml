@@ -10,7 +10,7 @@ on:
       
 jobs:
   deploy:
-    runs-on: ubuntu@22.04
+    runs-on: ubuntu-latest
     steps:
      - name: file to Server
        uses: appleboy/ssh-action@master
