@@ -5,7 +5,7 @@ on:
   # main 브랜치에 push가 발생할 때만
   push:
     branches:
-      - develop
+      - main
 
 jobs:
   deploy:
@@ -24,9 +24,9 @@ jobs:
       - name: file to Server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.REMOTE_SSH_HOST }}
-          username: ${{ secrets.REMOTE_SSH_USERNAME }}
-          key: ${{ secrets.REMOTE_SSH_KEY }}
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.PRIVATE_KEY }}
           source: ./app/*
           target: ./
 
@@ -34,9 +34,9 @@ jobs:
       - name: Deploy to Server
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.REMOTE_SSH_HOST }}
-          username: ${{ secrets.REMOTE_SSH_USERNAME }}
-          key: ${{ secrets.REMOTE_SSH_KEY }}
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.PRIVATE_KEY }}
           script: |
             # 옮겨진 프로젝트 내용 위치는 app 폴더에 있음
             cd ./app
