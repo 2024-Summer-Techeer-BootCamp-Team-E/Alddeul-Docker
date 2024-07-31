@@ -10,8 +10,8 @@ services:
       - "3307:3307"
     volumes:
       - mysql-data:/var/lib/mysql
-    # networks:
-    #   - app-network
+    networks:
+      - app-network
 
   backend:
     build:
@@ -34,6 +34,8 @@ services:
       python manage.py collectstatic --noinput &&
       gunicorn --bind 0.0.0.0:8000 django_backend.wsgi:application
       "
+    networks:
+      - app-network
 
   frontend:
     build:
@@ -49,25 +51,26 @@ services:
       - ./frontend:/frontend
       - /frontend/node_modules
     tty: true
+    networks:
+      - app-network
 
   nginx:
-    image: nginx:latest
+    image: nginx
     container_name: nginx
     ports:
       - "80:80"
-      - 443:443
+      # - 443:443
     volumes:
       - ./backend/nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./backend/django_backend/static:/app/static
       - ./backend/django_backend/media:/app/media
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      # - ./certbot/conf:/etc/letsencrypt
+      # - ./certbot/www:/var/www/certbot
     depends_on:
       - frontend
       - backend
-
-    # networks:
-    #   - app-network
+    networks:
+      - app-network
 
   redis_container:
     image: redis:latest
@@ -86,43 +89,79 @@ services:
       - "mode=standalone"
     restart: always
     command: redis-server /usr/local/conf/redis.conf
-    # networks:
-    #   - app-network
+    networks:
+      - app-network
 
-  prometheus:
-    image: prom/prometheus:v2.45.6
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./backend/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-  #   networks:
+  # prometheus:
+  #   image: prom/prometheus:v2.45.6
+  #   container_name: prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./backend/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   command:
+  #     - "--config.file=/etc/prometheus/prometheus.yml"
+  # #   networks:
+  # #     - app-network
+
+  # grafana:
+  #   image: grafana/grafana:9.5.20
+  #   container_name: grafana
+  #   volumes:
+  #     - ./backend/grafana:/etc/grafana/provisioning
+  #     - ./backend/grafana/data:/var/lib/grafana
+  #   ports:
+  #     - "3000:3000"
+  # #   networks:
   #     - app-network
 
-  grafana:
-    image: grafana/grafana:9.5.20
-    container_name: grafana
+  celery_worker:
+    restart: always
+    build:
+      context: ./backend/django_backend
+      dockerfile: Dockerfile
+    command: "celery -A django_backend worker --loglevel=info"
     volumes:
-      - ./backend/grafana:/etc/grafana/provisioning
-      - ./backend/grafana/data:/var/lib/grafana
-    ports:
-      - "3000:3000"
-  #   networks:
-  #     - app-network
-
-  certbot: #certbot 컨테이너 추가
-    image: certbot/certbot
-    restart: unless-stopped
-    container_name: certbot
-    volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - ./backend:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=django_backend.settings
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672/
+      - TZ=Asia/Seoul
     depends_on:
-      - nginx
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+      - rabbitmq
+    networks:
+      - app-network
+
+  flower:
+    image: mher/flower
+    environment:
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672/
+      - FLOWER_PORT=5555
+      - TZ=Asia/Seoul
+    ports:
+      - 5555:5555
+    networks:
+      - app-network
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.7.14-management-alpine
+    environment:
+      - RABBITMQ_USER=guest
+      - RABBITMQ_PASSWORD=guest
+      - TZ=Asia/Seoul
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - .:/code
+    networks:
+      - app-network
 
 volumes:
   mysql-data:
   redis-data:
+
+networks:
+  app-network:
+    driver: bridge
