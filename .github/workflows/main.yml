@@ -1,60 +1,37 @@
-# 워크플로우 이름 설정
 name: CI/CD Pipeline
 
 on:
-  # main 브랜치에 push가 발생할 때만
   push:
     branches:
       - main
-
+  pull_request:
+    branches:
+      - main
+      
 jobs:
   deploy:
-    # 실행 환경 설정
     runs-on: ubuntu-latest
-    environment: envs
-
     steps:
-      # 저장공간 설정
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          submodules: true
+     - name: file to Server
+       uses: appleboy/ssh-action@master
+       with:
+         host: ${{ secrets.EC2_HOST }}
+         username: ${{ secrets.EC2_USER }}
+         key: ${{ secrets.PRIVATE_KEY }}
+         script: |
+             cd Alddeul-Docker
+             git pull
+             sudo docker-compose down
+             sudo docker-compose pull
+             sudo docker-compose up -d --build
+   
 
-      # Docker 이미지를 서버로 전송
-      - name: file to Server
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.PRIVATE_KEY }}
-          source: ./app/*
-          target: ./
-
-      # 서버에서 Docker 이미지 빌드 및 실행
-      - name: Deploy to Server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.PRIVATE_KEY }}
-          script: |
-            # 옮겨진 프로젝트 내용 위치는 app 폴더에 있음
-            cd ./app
-            # 최신 docker 버전의 경우 docker compose 명령어를 사용 -p 옵션으로 프로젝트 이름 설정, -f 옵션으로 docker-compose 파일 설정
-            docker compose -p alddeul -f docker-compose.prod.yml down
-            
-            # DB용 .env 파일 생성
-            echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> ./backend/db/.env
-            echo "MYSQL_ROOT_USER=${{ secrets.MYSQL_ROOT_USER }}" >> ./backend/db/.env
-            echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}" >> ./backend/db/.env
-            echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> ./backend/db/.env
-            
-            # django용 .env 파일 생성
-            echo "DATABASE_NAME=${{ secrets.DATABASE_NAME }}" > ./backend/django_backend/.env
-            echo "DATABASE_USER=${{ secrets.DATABASE_USER }}" >> ./backend/django_backend/.env
-            echo "DATABASE_PASS=${{ secrets.DATABASE_PASS }}" >> ./backend/django_backend/.env
-            echo "DATABASE_HOST=${{ secrets.DATABASE_HOST }}" >> ./backend/django_backend/.env
-            echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> ./backend/django_backend/.env
-            
-            
-            docker compose -p alddeul -f docker-compose.prod.yml up -d --build
+            #  sudo docker-compose down
+            #  sudo docker rm -f celery_worker
+            #   sudo docker-compose pull
+            #   git submodule update --remote
+            #   sudo docker-compose up -d --build
+            # # 최신 docker 버전의 경우 docker compose 명령어를 사용 -p 옵션으로 프로젝트 이름 설정, -f 옵션으로 docker-compose 파일 설정
+            # docker compose -p alddeul -f docker-compose.prod.yml down
+       
+            # docker compose -p alddeul -f docker-compose.prod.yml up -d --build
