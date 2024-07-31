@@ -27,13 +27,3 @@ jobs:
              sudo docker compose -p alddeul -f docker-compose.prod.yml pull
              sudo docker compose -p alddeul -f docker-compose.prod.yml up -d --build
    
-
-            #  sudo docker-compose down
-            #  sudo docker rm -f celery_worker
-            #   sudo docker-compose pull
-            #   git submodule update --remote
-            #   sudo docker-compose up -d --build
-            # # 최신 docker 버전의 경우 docker compose 명령어를 사용 -p 옵션으로 프로젝트 이름 설정, -f 옵션으로 docker-compose 파일 설정
-            # docker compose -p alddeul -f docker-compose.prod.yml down
-       
-            # docker compose -p alddeul -f docker-compose.prod.yml up -d --build
